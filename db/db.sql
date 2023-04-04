@@ -117,5 +117,5 @@ CREATE INDEX IF NOT EXISTS forum_users_forum ON forum_users (forum);
 CREATE INDEX IF NOT EXISTS forum_users_nickname ON forum_users (nickname);
 CREATE INDEX IF NOT EXISTS forum_users_all ON forum_users (forum, nickname);
 
-CREATE INDEX IF NOT EXISTS posts_path_path1_id ON posts (path, (path[1]), id);
-CREATE INDEX IF NOT EXISTS posts_path1_id_thread_parent ON posts ((path[1]), thread, id, parent NULLS FIRST);
+--CREATE INDEX IF NOT EXISTS posts_path_path1_id ON posts (path, (path[1]), id);
+--CREATE INDEX IF NOT EXISTS posts_path1_id_thread_parent ON posts ((path[1]), thread, id, parent NULLS FIRST);
