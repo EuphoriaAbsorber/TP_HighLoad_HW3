@@ -17,6 +17,9 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "github.com/lib/pq"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -82,6 +85,10 @@ func main() {
 	myRouter.HandleFunc(conf.PathGetThreadPosts, handler.GetThreadPosts).Methods(http.MethodGet)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
+
+	instrumentation := muxprom.NewDefaultInstrumentation()
+	myRouter.Use(instrumentation.Middleware)
+	myRouter.Path("/metrics").Handler(promhttp.Handler())
 
 	myRouter.Use(loggingMiddleware)
 
