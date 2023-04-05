@@ -23,16 +23,6 @@ services:
     deploy:
       mode: global
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    depends_on:
-      - "prometheus"
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
-
   prometheus:
     container_name: prometheus      
     image: prom/prometheus
@@ -49,7 +39,6 @@ services:
       - mynet
 
 volumes:
-  grafana-storage:
   prometheus_data:
   .:
     external: true
