@@ -85,12 +85,11 @@ func main() {
 	myRouter.HandleFunc(conf.PathGetThreadPosts, handler.GetThreadPosts).Methods(http.MethodGet)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
+	myRouter.Use(loggingMiddleware)
 
 	instrumentation := muxprom.NewDefaultInstrumentation()
 	myRouter.Use(instrumentation.Middleware)
 	myRouter.Path("/metrics").Handler(promhttp.Handler())
-
-	myRouter.Use(loggingMiddleware)
 
 	err = http.ListenAndServe(conf.Port, myRouter)
 	if err != nil {
