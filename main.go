@@ -19,6 +19,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -29,10 +30,10 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		for header := range conf.Headers {
 			w.Header().Set(header, conf.Headers[header])
 		}
-		route := mux.CurrentRoute(r)
-		path, _ := route.GetPathTemplate()
+		//route := mux.CurrentRoute(r)
+		//path, _ := route.GetPathTemplate()
 		next.ServeHTTP(w, r)
-		totalRequests.WithLabelValues(path).Inc()
+		//totalRequests.WithLabelValues(path).Inc()
 	})
 }
 
@@ -50,13 +51,36 @@ func loggingMiddleware(next http.Handler) http.Handler {
 // 	rw.ResponseWriter.WriteHeader(code)
 // }
 
-var totalRequests = prometheus.NewCounterVec(
-	prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "Number of get requests.",
-	},
-	[]string{"path"},
-)
+// var totalRequests = prometheus.NewCounterVec(
+// 	prometheus.CounterOpts{
+// 		Name: "http_requests_total",
+// 		Help: "Number of get requests.",
+// 	},
+// 	[]string{"path"},
+// )
+
+var hitsCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "hits_counter",
+	Help: "Number of hits to the server",
+})
+
+// func IncrementHitsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+// 	return func(c echo.Context) error {
+// 		hitsCounter.Inc()
+// 		return next(c)
+// 	}
+// }
+
+func IncrementHitsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		//route := mux.CurrentRoute(r)
+		//path, _ := route.GetPathTemplate()
+		hitsCounter.Inc()
+		next.ServeHTTP(w, r)
+		//totalRequests.WithLabelValues(path).Inc()
+	})
+}
 
 // func prometheusMiddleware(next http.Handler) http.Handler {
 // 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,9 +91,9 @@ var totalRequests = prometheus.NewCounterVec(
 // 	})
 // }
 
-func init() {
-	prometheus.Register(totalRequests)
-}
+// func init() {
+// 	prometheus.Register(totalRequests)
+// }
 
 func main() {
 	myRouter := mux.NewRouter()
@@ -124,6 +148,7 @@ func main() {
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 	myRouter.Use(loggingMiddleware)
+	myRouter.Use(IncrementHitsMiddleware)
 
 	//instrumentation := muxprom.NewDefaultInstrumentation()
 	//myRouter.Use(instrumentation.Middleware)
