@@ -1,0 +1,37 @@
+global:
+  scrape_interval:     5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: 'node-balancer'
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'node-exporter:9100' ]
+
+  - job_name: 'back1'
+    static_configs:
+      - targets: ['87.239.104.72:5000']
+
+  - job_name: 'stats-back1'
+    static_configs:
+      - targets: ['87.239.104.72:9100']
+
+  - job_name: 'back2'
+    static_configs:
+      - targets: ['87.239.104.161:5000']
+
+  - job_name: 'stats-back2'
+    static_configs:
+      - targets: ['87.239.104.161:9100']
+
+  - job_name: 'back3'
+    static_configs:
+      - targets: ['95.163.215.152:5000']
+
+  - job_name: 'stats-back3'
+    static_configs:
+      - targets: ['95.163.215.152:9100']

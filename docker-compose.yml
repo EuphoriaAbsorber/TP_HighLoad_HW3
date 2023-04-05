@@ -1,0 +1,73 @@
+version: "3.1"
+
+services:
+  node-exporter:
+    container_name: node-exporter      
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.systemd 
+      - --collector.processes
+      - --collector.filesystem.ignored-mount-points
+      - ^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)
+    ports:
+      - "9100:9100"
+    restart: always
+    networks:
+      - mynet
+    deploy:
+      mode: global
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    depends_on:
+      - "prometheus"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+  prometheus:
+    container_name: prometheus      
+    image: prom/prometheus
+    volumes:
+      - ./prometheus:/etc/config
+    command:
+      - '--config.file=/etc/config/prometheus.yml'
+    restart: always
+    depends_on:
+      - "node-exporter"
+    ports:
+      - 9090:9090
+    networks:
+      - mynet
+
+  envoy:
+    image: envoyproxy/envoy
+    container_name: "envoy"
+    environment:
+      - ENABLE_ENVOY_STATS_TAGS=1
+    build:
+      context: .
+      dockerfile: Dockerfile.envoy
+    restart: always
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "15000:15000"
+
+volumes:
+  grafana-storage:
+  prometheus_data:
+  .:
+    external: true
+
+networks:
+  mynet:
+    driver: bridge

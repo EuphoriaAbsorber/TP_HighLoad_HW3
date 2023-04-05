@@ -1,0 +1,37 @@
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 15000
+static_resources:
+  clusters:
+    - name: service
+      connect_timeout: 4s
+      type: STATIC
+      lb_policy: ROUND_ROBIN
+      health_checks:
+          timeout: 2s
+          interval: 10s
+          unhealthy_threshold: 3
+          healthy_threshold: 5
+          http_health_check:
+            path: /api/service/status
+      load_assignment:
+        cluster_name: service
+        endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                      address: 87.239.104.72
+                      port_value: 5000
+            - endpoint:
+                address:
+                  socket_address:
+                      address: 87.239.104.161
+                      port_value: 5000
+            - endpoint:
+                address:
+                  socket_address:
+                      address: 95.163.215.152
+                      port_value: 5000
