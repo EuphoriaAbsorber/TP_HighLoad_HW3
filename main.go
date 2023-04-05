@@ -29,81 +29,19 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		for header := range conf.Headers {
 			w.Header().Set(header, conf.Headers[header])
 		}
-		//route := mux.CurrentRoute(r)
-		//path, _ := route.GetPathTemplate()
-		hits2Counter.Inc()
 		next.ServeHTTP(w, r)
 		hitsCounter.Inc()
-		//totalRequests.WithLabelValues(path).Inc()
 	})
 }
-
-// type responseWriter struct {
-// 	http.ResponseWriter
-// 	statusCode int
-// }
-
-// func NewResponseWriter(w http.ResponseWriter) *responseWriter {
-// 	return &responseWriter{w, http.StatusOK}
-// }
-
-// func (rw *responseWriter) WriteHeader(code int) {
-// 	rw.statusCode = code
-// 	rw.ResponseWriter.WriteHeader(code)
-// }
-
-// var totalRequests = prometheus.NewCounterVec(
-// 	prometheus.CounterOpts{
-// 		Name: "http_requests_total",
-// 		Help: "Number of get requests.",
-// 	},
-// 	[]string{"path"},
-// )
 
 var hitsCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "hits_counter",
 	Help: "Number of hits to the server",
 })
-var hits2Counter = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "hits_counter2",
-	Help: "Number of hits to the server",
-})
-
-// func IncrementHitsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(c echo.Context) error {
-// 		hitsCounter.Inc()
-// 		return next(c)
-// 	}
-// }
-
-// func IncrementHitsMiddleware(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-// 		//route := mux.CurrentRoute(r)
-// 		//path, _ := route.GetPathTemplate()
-// 		hitsCounter.Inc()
-// 		next.ServeHTTP(w, r)
-// 		//totalRequests.WithLabelValues(path).Inc()
-// 	})
-// }
-
-// func prometheusMiddleware(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		rw := NewResponseWriter(w)
-// 		next.ServeHTTP(rw, r)
-
-// 		totalRequests.WithLabelValues("path").Inc()
-// 	})
-// }
-
-// func init() {
-// 	prometheus.Register(totalRequests)
-// }
 
 func main() {
 	myRouter := mux.NewRouter()
 	prometheus.MustRegister(hitsCounter)
-	prometheus.MustRegister(hits2Counter)
 	conn, err := pgx.ParseConnectionString("host=localhost user=art password=12345 dbname=dbproject_base sslmode=disable")
 	if err != nil {
 		log.Println(err)
@@ -154,12 +92,8 @@ func main() {
 	myRouter.HandleFunc(conf.PathGetThreadPosts, handler.GetThreadPosts).Methods(http.MethodGet)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
-	myRouter.Use(loggingMiddleware)
-	//myRouter.Use(IncrementHitsMiddleware)
 
-	//instrumentation := muxprom.NewDefaultInstrumentation()
-	//myRouter.Use(instrumentation.Middleware)
-	//myRouter.Use(prometheusMiddleware)
+	myRouter.Use(loggingMiddleware)
 	myRouter.Path("/metrics").Handler(promhttp.Handler())
 
 	err = http.ListenAndServe(conf.Port, myRouter)
