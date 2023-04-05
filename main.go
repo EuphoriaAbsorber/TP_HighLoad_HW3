@@ -97,6 +97,7 @@ func IncrementHitsMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	myRouter := mux.NewRouter()
+	prometheus.MustRegister(hitsCounter)
 	conn, err := pgx.ParseConnectionString("host=localhost user=art password=12345 dbname=dbproject_base sslmode=disable")
 	if err != nil {
 		log.Println(err)
