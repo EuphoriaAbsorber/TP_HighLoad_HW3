@@ -57,7 +57,7 @@ static_resources:
         consecutive_5xx: 2
         interval: 2s
       load_assignment:
-        cluster_name: echo_cluster
+        cluster_name: my_cluster
         endpoints:
           - lb_endpoints:
               - endpoint:
