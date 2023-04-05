@@ -19,7 +19,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -32,7 +31,9 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		}
 		//route := mux.CurrentRoute(r)
 		//path, _ := route.GetPathTemplate()
+		hits2Counter.Inc()
 		next.ServeHTTP(w, r)
+		hitsCounter.Inc()
 		//totalRequests.WithLabelValues(path).Inc()
 	})
 }
@@ -59,8 +60,12 @@ func loggingMiddleware(next http.Handler) http.Handler {
 // 	[]string{"path"},
 // )
 
-var hitsCounter = promauto.NewCounter(prometheus.CounterOpts{
+var hitsCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "hits_counter",
+	Help: "Number of hits to the server",
+})
+var hits2Counter = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "hits_counter2",
 	Help: "Number of hits to the server",
 })
 
@@ -71,16 +76,16 @@ var hitsCounter = promauto.NewCounter(prometheus.CounterOpts{
 // 	}
 // }
 
-func IncrementHitsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// func IncrementHitsMiddleware(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		//route := mux.CurrentRoute(r)
-		//path, _ := route.GetPathTemplate()
-		hitsCounter.Inc()
-		next.ServeHTTP(w, r)
-		//totalRequests.WithLabelValues(path).Inc()
-	})
-}
+// 		//route := mux.CurrentRoute(r)
+// 		//path, _ := route.GetPathTemplate()
+// 		hitsCounter.Inc()
+// 		next.ServeHTTP(w, r)
+// 		//totalRequests.WithLabelValues(path).Inc()
+// 	})
+// }
 
 // func prometheusMiddleware(next http.Handler) http.Handler {
 // 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +103,7 @@ func IncrementHitsMiddleware(next http.Handler) http.Handler {
 func main() {
 	myRouter := mux.NewRouter()
 	prometheus.MustRegister(hitsCounter)
+	prometheus.MustRegister(hits2Counter)
 	conn, err := pgx.ParseConnectionString("host=localhost user=art password=12345 dbname=dbproject_base sslmode=disable")
 	if err != nil {
 		log.Println(err)
@@ -149,7 +155,7 @@ func main() {
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 	myRouter.Use(loggingMiddleware)
-	myRouter.Use(IncrementHitsMiddleware)
+	//myRouter.Use(IncrementHitsMiddleware)
 
 	//instrumentation := muxprom.NewDefaultInstrumentation()
 	//myRouter.Use(instrumentation.Middleware)
