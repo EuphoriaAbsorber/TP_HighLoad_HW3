@@ -20,7 +20,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -30,8 +29,10 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		for header := range conf.Headers {
 			w.Header().Set(header, conf.Headers[header])
 		}
-		totalRequests.WithLabelValues("path").Inc()
+		route := mux.CurrentRoute(r)
+		path, _ := route.GetPathTemplate()
 		next.ServeHTTP(w, r)
+		totalRequests.WithLabelValues(path).Inc()
 	})
 }
 
@@ -124,8 +125,8 @@ func main() {
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 	myRouter.Use(loggingMiddleware)
 
-	instrumentation := muxprom.NewDefaultInstrumentation()
-	myRouter.Use(instrumentation.Middleware)
+	//instrumentation := muxprom.NewDefaultInstrumentation()
+	//myRouter.Use(instrumentation.Middleware)
 	//myRouter.Use(prometheusMiddleware)
 	myRouter.Path("/metrics").Handler(promhttp.Handler())
 
