@@ -30,23 +30,24 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		for header := range conf.Headers {
 			w.Header().Set(header, conf.Headers[header])
 		}
+		totalRequests.WithLabelValues("path").Inc()
 		next.ServeHTTP(w, r)
 	})
 }
 
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
+// type responseWriter struct {
+// 	http.ResponseWriter
+// 	statusCode int
+// }
 
-func NewResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{w, http.StatusOK}
-}
+// func NewResponseWriter(w http.ResponseWriter) *responseWriter {
+// 	return &responseWriter{w, http.StatusOK}
+// }
 
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
-}
+// func (rw *responseWriter) WriteHeader(code int) {
+// 	rw.statusCode = code
+// 	rw.ResponseWriter.WriteHeader(code)
+// }
 
 var totalRequests = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -56,14 +57,14 @@ var totalRequests = prometheus.NewCounterVec(
 	[]string{"path"},
 )
 
-func prometheusMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rw := NewResponseWriter(w)
-		next.ServeHTTP(rw, r)
+// func prometheusMiddleware(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		rw := NewResponseWriter(w)
+// 		next.ServeHTTP(rw, r)
 
-		totalRequests.WithLabelValues("path").Inc()
-	})
-}
+// 		totalRequests.WithLabelValues("path").Inc()
+// 	})
+// }
 
 func init() {
 	prometheus.Register(totalRequests)
@@ -125,7 +126,7 @@ func main() {
 
 	instrumentation := muxprom.NewDefaultInstrumentation()
 	myRouter.Use(instrumentation.Middleware)
-	myRouter.Use(prometheusMiddleware)
+	//myRouter.Use(prometheusMiddleware)
 	myRouter.Path("/metrics").Handler(promhttp.Handler())
 
 	err = http.ListenAndServe(conf.Port, myRouter)
