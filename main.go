@@ -18,6 +18,7 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
@@ -31,6 +32,41 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func NewResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{w, http.StatusOK}
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+var totalRequests = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of get requests.",
+	},
+	[]string{"path"},
+)
+
+func prometheusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := NewResponseWriter(w)
+		next.ServeHTTP(rw, r)
+
+		totalRequests.WithLabelValues("path").Inc()
+	})
+}
+
+func init() {
+	prometheus.Register(totalRequests)
 }
 
 func main() {
@@ -89,6 +125,7 @@ func main() {
 
 	instrumentation := muxprom.NewDefaultInstrumentation()
 	myRouter.Use(instrumentation.Middleware)
+	myRouter.Use(prometheusMiddleware)
 	myRouter.Path("/metrics").Handler(promhttp.Handler())
 
 	err = http.ListenAndServe(conf.Port, myRouter)
