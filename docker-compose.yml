@@ -83,3 +83,5 @@ networks:
   default:
     external:
       name: develop
+  mynet:
+    driver: bridge
