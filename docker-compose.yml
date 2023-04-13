@@ -48,21 +48,6 @@ services:
     networks:
       - mynet
 
-  # envoy:
-  #   image: envoyproxy/envoy
-  #   container_name: "envoy"
-  #   environment:
-  #     - ENABLE_ENVOY_STATS_TAGS=1
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.envoy
-  #   restart: always
-  #   volumes:
-  #     - ./envoy.yaml:/etc/envoy/envoy.yaml
-  #   ports:
-  #     - 5000:5000
-  #     - 15000:15000
-
   haproxy:
     image: "haproxy:2.2-alpine"
     ports:
